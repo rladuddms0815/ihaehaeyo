@@ -9,6 +9,7 @@ interface VoiceContextType {
   stopListening: () => void
   speak: (text: string) => Promise<void>
   stopSpeaking: () => void
+  resetVoice: () => void
 }
 
 const VoiceContext = createContext<VoiceContextType | null>(null)
@@ -283,12 +284,26 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const stopSpeaking = useCallback(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel()
-      setIsSpeaking(false)
-    }
-  }, [])
+const stopSpeaking = useCallback(() => {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel()
+    setIsSpeaking(false)
+  }
+}, [])
+const resetVoice = useCallback(() => {
+  try {
+    recognition?.abort()
+  } catch {}
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel()
+  }
+
+  setTranscript('')
+  setError(null)
+  setIsListening(false)
+  setIsSpeaking(false)
+}, [recognition])
 
   return (
     <VoiceContext.Provider
@@ -301,6 +316,7 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
         stopListening,
         speak,
         stopSpeaking,
+        resetVoice,
       }}
     >
       {children}

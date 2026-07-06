@@ -91,13 +91,14 @@ export default function SettingsPage() {
   }
 
   const handleResetProfile = () => {
-    localStorage.removeItem('ihaehaeyo_saved_documents')
+    localStorage.clear()      // 저장된 데이터 모두 삭제
+    sessionStorage.clear()    // 세션 데이터도 삭제
+
+    speechSynthesis.cancel()  // 혹시 읽는 중이면 중지
 
     resetProfile()
-    setProfileSaved(false)
-    setIsEditingProfile(false)
 
-    navigate('/')
+    window.location.replace(window.location.pathname)
   }
 
   const handleItemClick = (itemId: string) => {
