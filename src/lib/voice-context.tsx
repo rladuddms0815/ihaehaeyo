@@ -140,6 +140,9 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
 
     setError(null)
     setTranscript('')
+    if (isListening) {
+      return
+    }
 
     // Proactively request microphone permission via getUserMedia first. On
     // several Android browsers, calling recognition.start() before the mic
@@ -194,8 +197,10 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      recognition.start()
-      setIsListening(true)
+      if (!isListening) {
+        recognition.start()
+        setIsListening(true)
+      }
     } catch (startErr) {
       // start() throws (InvalidStateError) if recognition is already running,
       // e.g. from a rapid double-tap on mobile.
@@ -203,7 +208,7 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
       setError('음성 인식을 시작할 수 없습니다. 잠시 후 다시 시도해주세요.')
       setIsListening(false)
     }
-  }, [recognition])
+  }, [recognition, isListening])
 
   const stopListening = useCallback(() => {
     if (recognition) {

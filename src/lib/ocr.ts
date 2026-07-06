@@ -90,8 +90,8 @@ export class GeminiUnavailableError extends Error {
 function getGeminiApiKeys(): string[] {
   const rawKeys = [
     import.meta.env.VITE_GEMINI_API_KEY,
-    import.meta.env.VITE_GEMINI_API_KEY2,
-    import.meta.env.VITE_GEMINI_API_KEY3,
+    import.meta.env.VITE_GEMINI_API_KEY_2,
+    import.meta.env.VITE_GEMINI_API_KEY_3,
   ]
 
   const keys = rawKeys.filter((key): key is string => typeof key === 'string' && key.trim().length > 0)
