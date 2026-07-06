@@ -43,6 +43,55 @@ declare global {
   }
 }
 
+// Known Korean voice names by platform, used to pick the most natural-sounding
+// female voice available. Ordered roughly by naturalness/preference within
+// each platform (e.g. Windows' newer "Online (Natural)" voices before the
+// older desktop ones).
+const FEMALE_VOICE_NAME_HINTS = [
+  'sun-hi', 'sunhi',       // Windows 11 "Microsoft SunHi Online (Natural)" / SunHi
+  'heami',                 // Windows "Microsoft Heami Desktop"
+  'yuna',                  // iOS/macOS "Yuna"
+  'suhyun',                // iOS/macOS newer Siri-style voice "Suhyun"
+  'google 한국',            // Android/Chrome "Google 한국의" (default Korean voice)
+  'google korean',
+  'female',
+  '여성',
+]
+
+// Korean voices known (or named) to be male, explicitly excluded when a
+// better alternative exists.
+const MALE_VOICE_NAME_HINTS = [
+  'injoon',                // Windows "Microsoft InJoon"
+  'yohan',
+  'male',
+  '남성',
+]
+
+function pickKoreanFemaleVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
+  const koreanVoices = voices.filter(
+    (voice) => voice.lang === 'ko-KR' || voice.lang?.toLowerCase().startsWith('ko')
+  )
+  if (koreanVoices.length === 0) return undefined
+
+  const isMaleVoice = (voice: SpeechSynthesisVoice) =>
+    MALE_VOICE_NAME_HINTS.some((hint) => voice.name.toLowerCase().includes(hint))
+
+  // Prefer anything not explicitly known/named as male.
+  const nonMaleCandidates = koreanVoices.filter((voice) => !isMaleVoice(voice))
+  const candidates = nonMaleCandidates.length > 0 ? nonMaleCandidates : koreanVoices
+
+  // Try each known female voice name, in priority order, across all platforms.
+  for (const hint of FEMALE_VOICE_NAME_HINTS) {
+    const match = candidates.find((voice) => voice.name.toLowerCase().includes(hint))
+    if (match) return match
+  }
+
+  // No explicit match (e.g. an unrecognized Korean voice) — fall back to the
+  // first non-male candidate, which on most platforms (Android/Chrome, and
+  // iOS where Yuna is typically the only option) is already the female voice.
+  return candidates[0]
+}
+
 export function VoiceProvider({ children }: { children: ReactNode }) {
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
@@ -182,13 +231,13 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
       const speakNow = () => {
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.lang = 'ko-KR'
-        utterance.rate = 0.8
+        utterance.rate = 0.9
+        utterance.pitch = 1.1
+        utterance.volume = 1.0
 
-        const koreanVoice = synth
-          .getVoices()
-          .find((voice) => voice.lang === 'ko-KR' || voice.lang?.startsWith('ko'))
-        if (koreanVoice) {
-          utterance.voice = koreanVoice
+        const koreanFemaleVoice = pickKoreanFemaleVoice(synth.getVoices())
+        if (koreanFemaleVoice) {
+          utterance.voice = koreanFemaleVoice
         }
 
         utterance.onend = () => {
